@@ -1,5 +1,5 @@
 use std::{
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Error, Write},
     net::{SocketAddr, TcpListener, TcpStream},
 };
 
@@ -19,15 +19,16 @@ fn main() {
     }
 }
 
-const DEFAULT_ADDR: ([u8; 4], u16) = ([127, 0, 0, 1], 8080);
-
 /// Wait for connection with client,
 /// receive and send message.
 fn run_server() -> std::io::Result<()> {
     // Init connection
-    let addr = SocketAddr::from(DEFAULT_ADDR);
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     let listener = TcpListener::bind(addr)?;
-    println!("Waiting for connection...");
+    println!(
+        "Waiting for connection on {:?}...",
+        listener.local_addr().unwrap()
+    );
     let (mut stream, _) = listener.accept()?;
     println!("Connected to client...");
 
@@ -44,12 +45,14 @@ fn run_server() -> std::io::Result<()> {
     Ok(())
 }
 
+const SERVER_ADDR: ([u8; 4], u16) = ([10, 10, 0, 2], 8080);
+
 /// Establish connection with server,
 /// send and receive message.
 fn run_client() -> std::io::Result<()> {
     // Init connection
     println!("Connecting to server...");
-    let addr = SocketAddr::from(DEFAULT_ADDR);
+    let addr = SocketAddr::from(SERVER_ADDR);
     let mut stream = TcpStream::connect(addr)?;
     println!("Connected...");
 

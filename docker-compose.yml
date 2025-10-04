@@ -1,0 +1,28 @@
+services:
+  server:
+    build:
+      dockerfile: Dockerfile
+    container_name: server
+    command: ["./target/release/rust_tcp_demo", "server"]
+    networks:
+      testnet:
+        ipv4_address: 10.10.0.2
+
+  client:
+    depends_on:
+      - server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: client
+    command: ["./target/release/rust_tcp_demo", "client"]
+    networks:
+      testnet:
+        ipv4_address: 10.10.0.3
+
+networks:
+  testnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
