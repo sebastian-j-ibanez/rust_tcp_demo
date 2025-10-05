@@ -1,22 +1,36 @@
 use std::{
-    io::{BufRead, BufReader, Error, Write},
+    io::{BufRead, BufReader, Write},
     net::{SocketAddr, TcpListener, TcpStream},
+    str::FromStr,
 };
 
 fn main() {
-    match std::env::args().nth(1).as_deref() {
-        Some("client") => {
-            if let Err(e) = run_client() {
-                eprintln!("error: {}", e);
-            };
-        }
-        Some("server") => {
+    let raw_args: Vec<String> = std::env::args().skip(1).collect();
+    let args: Vec<&str> = raw_args.iter().map(|s| s.as_str()).collect();
+    match args.as_slice() {
+        ["client", addr] => match parse_and_run_client(addr) {
+            Ok(()) => {}
+            Err(e) => eprintln!("error: {e}"),
+        },
+        ["server"] => {
             if let Err(e) = run_server() {
-                eprintln!("error: {}", e);
-            };
+                eprintln!("error: {e}");
+            }
         }
         _ => print_usage(),
     }
+}
+
+/// Parse string to address and run client.
+fn parse_and_run_client(raw_addr: &str) -> std::io::Result<()> {
+    let addr = SocketAddr::from_str(raw_addr).map_err(|_| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "invalid address format, expected IP:PORT",
+        )
+    })?;
+
+    run_client(addr)
 }
 
 /// Wait for connection with client,
@@ -45,14 +59,11 @@ fn run_server() -> std::io::Result<()> {
     Ok(())
 }
 
-const SERVER_ADDR: ([u8; 4], u16) = ([10, 10, 0, 2], 8080);
-
 /// Establish connection with server,
 /// send and receive message.
-fn run_client() -> std::io::Result<()> {
+fn run_client(addr: SocketAddr) -> std::io::Result<()> {
     // Init connection
     println!("Connecting to server...");
-    let addr = SocketAddr::from(SERVER_ADDR);
     let mut stream = TcpStream::connect(addr)?;
     println!("Connected...");
 
